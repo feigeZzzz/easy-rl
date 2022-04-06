@@ -1,39 +1,40 @@
 #!/usr/bin/env python
 # coding=utf-8
-'''
-Author: John
+
+"""Author: John
 Email: johnjim0816@gmail.com
 Date: 2020-11-22 23:27:44
 LastEditor: John
 LastEditTime: 2021-10-16 00:43:52
-Discription: 
-Environment: 
-'''
+Discription:
+Environment: """
+
 import torch
 from torch.distributions import Bernoulli
 from torch.autograd import Variable
 import numpy as np
 from PolicyGradient.model import MLP
 
+
 class PolicyGradient:
-    
-    def __init__(self, state_dim,cfg):
+
+    def __init__(self, state_dim, cfg):
         self.gamma = cfg.gamma
-        self.policy_net = MLP(state_dim,hidden_dim=cfg.hidden_dim)
+        self.policy_net = MLP(state_dim, hidden_dim=cfg.hidden_dim)
         self.optimizer = torch.optim.RMSprop(self.policy_net.parameters(), lr=cfg.lr)
         self.batch_size = cfg.batch_size
 
-    def choose_action(self,state):
-        
+    def choose_action(self, state):
+
         state = torch.from_numpy(state).float()
         state = Variable(state)
         probs = self.policy_net(state)
-        m = Bernoulli(probs) # 伯努利分布
+        m = Bernoulli(probs)  # 伯努利分布
         action = m.sample()
-        action = action.data.numpy().astype(int)[0] # 转为标量
+        action = action.data.numpy().astype(int)[0]  # 转为标量
         return action
-        
-    def update(self,reward_pool,state_pool,action_pool):
+
+    def update(self, reward_pool, state_pool, action_pool):
         # Discount reward
         running_add = 0
         for i in reversed(range(len(reward_pool))):
@@ -63,7 +64,9 @@ class PolicyGradient:
             # print(loss)
             loss.backward()
         self.optimizer.step()
-    def save(self,path):
-        torch.save(self.policy_net.state_dict(), path+'pg_checkpoint.pt')
-    def load(self,path):
-        self.policy_net.load_state_dict(torch.load(path+'pg_checkpoint.pt')) 
+
+    def save(self, path):
+        torch.save(self.policy_net.state_dict(), path + 'pg_checkpoint.pt')
+
+    def load(self, path):
+        self.policy_net.load_state_dict(torch.load(path + 'pg_checkpoint.pt'))

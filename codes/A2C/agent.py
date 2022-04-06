@@ -1,14 +1,12 @@
-#!/usr/bin/env python
-# coding=utf-8
-'''
-Author: JiangJi
+"""Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2021-05-03 22:16:08
 LastEditor: JiangJi
 LastEditTime: 2021-05-03 22:23:48
-Discription: 
-Environment: 
-'''
+Discription:
+Environment: """
+
+
 import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F

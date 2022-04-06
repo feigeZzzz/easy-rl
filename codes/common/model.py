@@ -14,6 +14,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
 
+
 class MLP(nn.Module):
     def __init__(self, input_dim,output_dim,hidden_dim=128):
         """ 初始化q网络，为全连接网络
@@ -30,6 +31,7 @@ class MLP(nn.Module):
         x = F.relu(self.fc1(x)) 
         x = F.relu(self.fc2(x))
         return self.fc3(x)
+
 
 class Critic(nn.Module):
     def __init__(self, n_obs, action_dim, hidden_size, init_w=3e-3):
@@ -50,6 +52,7 @@ class Critic(nn.Module):
         x = self.linear3(x)
         return x
 
+
 class Actor(nn.Module):
     def __init__(self, n_obs, action_dim, hidden_size, init_w=3e-3):
         super(Actor, self).__init__()  
@@ -65,6 +68,7 @@ class Actor(nn.Module):
         x = F.relu(self.linear2(x))
         x = torch.tanh(self.linear3(x))
         return x
+
 
 class ActorCritic(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_dim=256):
