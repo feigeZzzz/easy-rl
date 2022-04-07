@@ -32,7 +32,9 @@ class PolicyGradient:
         # m = Bernoulli(probs)  # 伯努利分布
         # action = m.sample()
         # action = action.data.numpy().astype(int)[0]  # 转为标量
-        action = self.e_greedy(probs, epochs)
+        action = np.random.choice(
+            range(probs.shape[0]), p=probs.detach().numpy().flatten())
+        # action = self.e_greedy(probs, epochs)
         return action
 
     def e_greedy(self, action, epochs, start_greedy=0.8):
@@ -62,18 +64,47 @@ class PolicyGradient:
         # Gradient Desent
         self.optimizer.zero_grad()
 
-        for i in range(len(reward_pool)):
-            state = state_pool[i]
-            action = Variable(torch.FloatTensor([action_pool[i]]))
-            reward = reward_pool[i]
-            state = Variable(torch.from_numpy(state).float())
-            probs = self.policy_net(state)
-            # m = Bernoulli(probs)
-            # loss = -m.log_prob(action) * reward  # Negtive score function x reward
-            loss = -torch.log(probs) * reward
-            # print(loss)
+        gen_data = self.generate_data(reward_pool, state_pool, action_pool)
+
+        for _ in range(int(len(reward_pool) / self.batch_size) + 1):
+            rewards, states, actions = next(gen_data)
+            actions = Variable(torch.FloatTensor(actions))
+            y_true = torch.nn.functional.one_hot(actions.long(), 2)
+            states = Variable(torch.from_numpy(states).float())
+            probs = self.policy_net(states)
+            log_probs = -torch.sum(torch.log(probs) * y_true, dim=1)
+            rewards = Variable(torch.FloatTensor(rewards))
+            loss = torch.mean(log_probs * rewards)
             loss.backward()
+
+        # for i in range(len(reward_pool)):
+        #     state = state_pool[i]
+        #     action = Variable(torch.FloatTensor([action_pool[i]]))
+        #     y_true = torch.nn.functional.one_hot(action.long(), 2)
+        #     state = Variable(torch.from_numpy(state).float())
+        #     probs = self.policy_net(state)
+        #     log_probs = -torch.sum(torch.log(probs) * y_true)
+        #     reward = reward_pool[i]
+        #     loss = log_probs * reward
+        #     # probs = self.policy_net(state)
+        #     # m = Bernoulli(probs)
+        #     # loss = -m.log_prob(action) * reward  # Negtive score function x reward
+        #     # loss = -torch.log(probs) * reward
+        #     # print(loss)
+        #     loss.backward()
         self.optimizer.step()
+
+    def generate_data(self, reward_pool, state_pool, action_pool):
+        data_len = len(reward_pool)
+        idx = 0
+        while True:
+            if (idx + self.batch_size) < data_len:
+                yield (reward_pool[idx: idx + self.batch_size],
+                       np.array(state_pool[idx: idx + self.batch_size]),
+                       action_pool[idx: idx + self.batch_size])
+                idx += self.batch_size
+            else:
+                yield reward_pool[idx:], np.array(state_pool[idx:]), action_pool[idx:]
 
     def save(self, path):
         torch.save(self.policy_net.state_dict(), path + 'pg_checkpoint.pt')

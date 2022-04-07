@@ -21,10 +21,10 @@ class MLP(nn.Module):
         # 24和36为hidden layer的层数，可根据input_dim, action_dim的情况来改变
         self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, hidden_dim)
-        self.fc3 = nn.Linear(hidden_dim, 1)  # Prob of Left
+        self.fc3 = nn.Linear(hidden_dim, 2)  # Prob of Left
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        x = F.sigmoid(self.fc3(x))
+        x = F.softmax(self.fc3(x))
         return x
