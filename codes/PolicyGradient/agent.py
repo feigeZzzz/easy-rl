@@ -24,15 +24,24 @@ class PolicyGradient:
         self.optimizer = torch.optim.RMSprop(self.policy_net.parameters(), lr=cfg.lr)
         self.batch_size = cfg.batch_size
 
-    def choose_action(self, state):
+    def choose_action(self, state, epochs=200):
 
         state = torch.from_numpy(state).float()
         state = Variable(state)
         probs = self.policy_net(state)
-        m = Bernoulli(probs)  # 伯努利分布
-        action = m.sample()
-        action = action.data.numpy().astype(int)[0]  # 转为标量
+        # m = Bernoulli(probs)  # 伯努利分布
+        # action = m.sample()
+        # action = action.data.numpy().astype(int)[0]  # 转为标量
+        action = self.e_greedy(probs, epochs)
         return action
+
+    def e_greedy(self, action, epochs, start_greedy=0.8):
+        greedy = 0.9
+        random_data = np.random.random()
+        if random_data < greedy:
+            return 1 if action >= 0.5 else 0
+        else:
+            return 0 if action >= 0.5 else 1
 
     def update(self, reward_pool, state_pool, action_pool):
         # Discount reward
@@ -59,8 +68,9 @@ class PolicyGradient:
             reward = reward_pool[i]
             state = Variable(torch.from_numpy(state).float())
             probs = self.policy_net(state)
-            m = Bernoulli(probs)
-            loss = -m.log_prob(action) * reward  # Negtive score function x reward
+            # m = Bernoulli(probs)
+            # loss = -m.log_prob(action) * reward  # Negtive score function x reward
+            loss = -torch.log(probs) * reward
             # print(loss)
             loss.backward()
         self.optimizer.step()

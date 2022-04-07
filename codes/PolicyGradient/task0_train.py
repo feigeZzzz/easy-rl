@@ -20,15 +20,15 @@ curr_path = os.path.dirname(os.path.abspath(__file__))  # 当前文件所在绝�
 parent_path = os.path.dirname(curr_path)  # 父路径
 sys.path.append(parent_path)  # 添加父路径到系统路径sys.path
 algo_name = "PolicyGradient"  # 算法名称
-env_name = 'CartPole-v0'  # 环境名称
+env_name = 'CartPole-v1'  # 环境名称
 
 curr_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")  # 获取当前时间
 
 
 class PGConfig:
     def __init__(self):
-        self.algo_name = "PolicyGradient"  # 算法名称
-        self.env_name = 'CartPole-v0'  # 环境名称
+        self.algo_name = algo_name  # 算法名称
+        self.env_name = env_name  # 环境名称
         self.result_path = curr_path + "/outputs/" + self.env_name + \
                            '/' + curr_time + '/results/'  # 保存结果的路径
         self.model_path = curr_path + "/outputs/" + self.env_name + \
@@ -64,7 +64,7 @@ def env_agent_config(cfg, seed=1):
 
 
 def train(cfg, env, agent):
-    print('Start to eval !')
+    print('Start to train !')
     print(f'Env:{cfg.env_name}, Algorithm:{cfg.algo_name}, Device:{cfg.device}')
     state_pool = []  # 存放每batch_size个episode的state序列
     action_pool = []
@@ -76,8 +76,9 @@ def train(cfg, env, agent):
         env.render()
         ep_reward = 0
         for _ in count():
-            action = agent.choose_action(state)  # 根据当前环境state选择action
+            action = agent.choose_action(state, i_ep)  # 根据当前环境state选择action
             next_state, reward, done, _ = env.step(action)
+            env.render()
             ep_reward += reward
             if done:
                 reward = 0
@@ -134,7 +135,9 @@ def eval(cfg, env, agent):
 
 if __name__ == "__main__":
     cfg = PGConfig()
+
     plot_cfg = PlotConfig()
+
     # train
     env, agent = env_agent_config(cfg, seed=1)
     rewards, ma_rewards = train(cfg, env, agent)
