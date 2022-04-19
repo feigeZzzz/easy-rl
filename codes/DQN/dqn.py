@@ -92,6 +92,7 @@ class DQN:
         else:
             action = random.randrange(self.action_dim)
         return action
+
     def update(self):
         if len(self.memory) < self.batch_size: # 当memory中不满足一个批量时，不更新策略
             return

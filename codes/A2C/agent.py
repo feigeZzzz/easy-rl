@@ -6,16 +6,14 @@ LastEditTime: 2021-05-03 22:23:48
 Discription:
 Environment: """
 
-
-import torch.optim as optim
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.optim as optim
 from torch.distributions import Categorical
 
 
 class ActorCritic(nn.Module):
-    ''' A2C网络模型，包含一个Actor和Critic
-    '''
+    """ A2C网络模型，包含一个Actor和Critic
+    """
 
     def __init__(self, input_dim, output_dim, hidden_dim):
         super(ActorCritic, self).__init__()
@@ -40,8 +38,8 @@ class ActorCritic(nn.Module):
 
 
 class A2C:
-    ''' A2C算法
-    '''
+    """A2C算法
+    """
 
     def __init__(self, state_dim, action_dim, cfg) -> None:
         self.gamma = cfg.gamma

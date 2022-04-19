@@ -80,7 +80,7 @@ def compute_returns(next_value, rewards, masks, gamma=0.99):
 
 def train(cfg, envs):
     print('开始训练!')
-    print(f'环境：{cfg.env_name}, 算法：{cfg.algo}, 设备：{cfg.device}')
+    print(f'环境：{cfg.env_name}, 算法：{cfg.algo_name}, 设备：{cfg.device}')
     env = gym.make(cfg.env_name)  # a single env
     env.seed(10)
     state_dim = envs.observation_space.shape[0]
@@ -91,6 +91,7 @@ def train(cfg, envs):
     test_rewards = []
     test_ma_rewards = []
     state = envs.reset()
+    env.render()
     while frame_idx < cfg.max_frames:
         log_probs = []
         values = []
@@ -103,6 +104,7 @@ def train(cfg, envs):
             dist, value = model(state)
             action = dist.sample()
             next_state, reward, done, _ = envs.step(action.cpu().numpy())
+            env.render()
             log_prob = dist.log_prob(action)
             entropy += dist.entropy().mean()
             log_probs.append(log_prob)
@@ -129,7 +131,7 @@ def train(cfg, envs):
         advantage = returns - values
         actor_loss = -(log_probs * advantage.detach()).mean()
         critic_loss = advantage.pow(2).mean()
-        loss = actor_loss + 0.5 * critic_loss - 0.001 * entropy
+        loss = actor_loss + 0.5 * critic_loss
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -137,11 +139,24 @@ def train(cfg, envs):
     return test_rewards, test_ma_rewards
 
 
+def env_agent_config(cfg, seed=1):
+    env = gym.make(cfg.env_name)
+    env.seed(seed)
+    state_dim = env.observation_space.shape[0]
+    agent = PolicyGradient(state_dim, cfg)
+    return env, agent
+
+
 if __name__ == "__main__":
     cfg = A2CConfig()
     plot_cfg = PlotConfig()
-    envs = [make_envs(cfg.env_name) for i in range(cfg.n_envs)]
-    envs = SubprocVecEnv(envs)
+
+    # 去掉异步
+    # envs = [make_envs(cfg.env_name) for i in range(cfg.n_envs)]
+    # envs = SubprocVecEnv(envs)
+
+    envs = make_envs(cfg.env_name)
+
     # 训练
     rewards, ma_rewards = train(cfg, envs)
     make_dir(plot_cfg.result_path, plot_cfg.model_path)
