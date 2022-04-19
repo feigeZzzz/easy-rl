@@ -149,6 +149,7 @@ class SAC:
             target_param.data.copy_(param.data)
         self.value_criterion  = nn.MSELoss()
         self.soft_q_criterion = nn.MSELoss()
+
     def update(self, gamma=0.99,mean_lambda=1e-3,
         std_lambda=1e-3,
         z_lambda=0.0,

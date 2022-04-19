@@ -68,7 +68,7 @@ class ActorCritic(nn.Module):
     def forward(self, x):
         value = self.critic(x)
         mu = self.actor(x)
-        std = self.log_std.exp().expand_as(mu)
+        std = self.log_std.exp()
         dist = Normal(mu, std)
         return dist, value
 
@@ -142,14 +142,15 @@ while frame_idx < max_frames:
 
         action = dist.sample()
         next_state, reward, done, _ = env.step(action.cpu().numpy())
-
+        env.render()
+        next_state = next_state.squeeze()
         log_prob = dist.log_prob(action)
         entropy += dist.entropy().mean()
 
         log_probs.append(log_prob)
         values.append(value)
         rewards.append(torch.FloatTensor(reward).unsqueeze(1).to(device))
-        masks.append(torch.FloatTensor(1 - done).unsqueeze(1).to(device))
+        masks.append(torch.FloatTensor([1 - done]).unsqueeze(1).to(device))
 
         state = next_state
         frame_idx += 1
@@ -163,8 +164,8 @@ while frame_idx < max_frames:
     _, next_value = model(next_state)
     returns = compute_gae(next_value, rewards, masks, values)
 
-    log_probs = torch.cat(log_probs)
-    returns = torch.cat(returns).detach()
+    log_probs = torch.cat(log_probs).squeeze()
+    returns = torch.cat(returns).squeeze().detach()
     values = torch.cat(values)
 
     advantage = returns - values
