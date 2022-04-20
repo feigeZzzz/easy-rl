@@ -34,26 +34,24 @@ class Actor(nn.Module):
         return dist
 
 
-class ActorNet(nn.Module):
-    def __init__(self, n_states, bound):
-        super(ActorNet, self).__init__()
-        self.n_states = n_states
+class ContinuousActor(nn.Module):
+    def __init__(self, state_dim, hidden_dim, bound):
+        super(ContinuousActor, self).__init__()
         self.bound = bound
-
-        self.layer = nn.Sequential(
-            nn.Linear(self.n_states, 128),
+        self.actor = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU()
         )
-
-        self.mu_out = nn.Linear(128, 1)
-        self.sigma_out = nn.Linear(128, 1)
+        self.mu_out = nn.Linear(hidden_dim, 1)
+        self.sigma_out = nn.Linear(hidden_dim, 1)
 
     def forward(self, x):
-        x = F.relu(self.layer(x))
+        x = F.relu(self.actor(x))
         mu = self.bound * torch.tanh(self.mu_out(x))
         sigma = F.softplus(self.sigma_out(x))
-        dist = torch.distributions.Normal(mu, sigma)
-        return dist
+        return mu, sigma
 
 
 class CriticNet(nn.Module):

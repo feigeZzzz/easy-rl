@@ -14,32 +14,36 @@ import torch
 import torch.optim as optim
 
 from PPO.memory import PPOMemory
-from PPO.model import Actor, Critic
+from PPO.model import Actor, Critic, ContinuousActor
 
 
 class PPO:
-    def __init__(self, state_dim, action_dim, cfg):
+    def __init__(self, state_dim, action_dim, cfg, bound=2):
         self.gamma = cfg.gamma
         self.continuous = cfg.continuous
         self.policy_clip = cfg.policy_clip
         self.n_epochs = cfg.n_epochs
         self.gae_lambda = cfg.gae_lambda
         self.device = cfg.device
-        self.actor = Actor(state_dim, action_dim, cfg.hidden_dim).to(self.device)
+        # self.actor = Actor(state_dim, action_dim, cfg.hidden_dim).to(self.device)
+        self.actor = ContinuousActor(state_dim, cfg.hidden_dim, bound).to(self.device)
         self.critic = Critic(state_dim, cfg.hidden_dim).to(self.device)
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=cfg.actor_lr)
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=cfg.critic_lr)
         self.memory = PPOMemory(cfg.batch_size)
         self.loss = 0
+        self.bound = bound
 
     def choose_action(self, state):
         state = torch.tensor([state], dtype=torch.float).to(self.device)
-        dist = self.actor(state)
+        mu, sigma = self.actor(state)
+        dist = torch.distributions.Normal(mu, sigma)
         value = self.critic(state)
         action = dist.sample()
         probs = torch.squeeze(dist.log_prob(action)).item()
         if self.continuous:
-            action = torch.tanh(action.float())
+            # action = torch.tanh(action.float())
+            action = torch.clamp(action.cpu(), -self.bound, self.bound)
         else:
             action = torch.squeeze(action).item()
         value = torch.squeeze(value).item()
@@ -68,10 +72,11 @@ class PPO:
                 states = torch.tensor(state_arr[batch], dtype=torch.float).to(self.device)
                 old_probs = torch.tensor(old_prob_arr[batch]).to(self.device)
                 actions = torch.tensor(action_arr[batch]).to(self.device)
-                dist = self.actor(states)
+                mu, sigma = self.actor(states)
+                dist = torch.distributions.Normal(mu, sigma)
                 critic_value = self.critic(states)
                 critic_value = torch.squeeze(critic_value)
-                new_probs = dist.log_prob(actions)
+                new_probs = dist.log_prob(actions).diag()
                 prob_ratio = new_probs.exp() / old_probs.exp()
                 weighted_probs = advantage[batch] * prob_ratio
                 weighted_clipped_probs = torch.clamp(prob_ratio, 1 - self.policy_clip,

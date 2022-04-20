@@ -22,8 +22,9 @@ class PPOConfig:
         self.algo = "PPO"  # 算法名称
         self.env_name = 'Pendulum-v1'  # 环境名称
         self.continuous = True  # 环境是否为连续动作
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # 检测GPU
-        self.train_eps = 200  # 训练的回合数
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # 检测GPU
+        self.device = 'cpu'
+        self.train_eps = 1000  # 训练的回合数
         self.test_eps = 20  # 测试的回合数
         self.batch_size = 5
         self.gamma = 0.99
@@ -38,9 +39,10 @@ class PPOConfig:
 
 class PlotConfig:
     def __init__(self) -> None:
-        self.algo = "PPO"  # 算法名称
+        self.algo_name = "PPO"  # 算法名称
         self.env_name = 'Pendulum-v1'  # 环境名称
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # 检测GPU
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # 检测GPU
+        self.device = 'cpu'
         self.result_path = curr_path + "/outputs/" + self.env_name + \
                            '/' + curr_time + '/results/'  # 保存结果的路径
         self.model_path = curr_path + "/outputs/" + self.env_name + \
@@ -53,7 +55,8 @@ def env_agent_config(cfg, seed=1):
     env.seed(seed)
     state_dim = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
-    agent = PPO(state_dim, action_dim, cfg)
+    bound = env.action_space.high[0]
+    agent = PPO(state_dim, action_dim, cfg, bound)
     return env, agent
 
 

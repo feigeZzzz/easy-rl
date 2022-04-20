@@ -13,7 +13,7 @@ def train(cfg, env, agent):
         while not done:
             action, prob, val = agent.choose_action(state)
             state_, reward, done, _ = env.step(action)
-            env.render()
+            # env.render()
             steps += 1
             ep_reward += reward
             agent.memory.push(state, action, prob, val, reward, done)
@@ -26,7 +26,7 @@ def train(cfg, env, agent):
         else:
             ma_rewards.append(ep_reward)
         if (i_ep + 1) % 10 == 0:
-            print(f"回合：{i_ep + 1}/{cfg.train_eps}，奖励：{ep_reward:.2f}")
+            print(f"回合：{i_ep + 1}/{cfg.train_eps}，奖励：{ep_reward}")
     print('完成训练！')
     return rewards, ma_rewards
 

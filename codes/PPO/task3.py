@@ -81,12 +81,12 @@ class PPO(nn.Module):
         action = dist.sample()
         return np.clip(action, -self.bound, self.bound)
 
-    def discount_reward(self, rewards, s_):
+    def discount_reward(self, rewards, s_, is_done):
         s_ = torch.FloatTensor(s_)
         target = self.critic_model(s_).detach()                 # torch.Size([1])
         target_list = []
-        for r in rewards[::-1]:
-            target = r + self.gamma * target
+        for step in reversed(range(len(rewards))):
+            target = rewards[step] + self.gamma * target * (1-int(is_done[step]))
             target_list.append(target)
         target_list.reverse()
         target_list = torch.cat(target_list)                   # torch.Size([batch])
@@ -169,22 +169,23 @@ if __name__ == '__main__':
         ep_r = 0
         s = env.reset()
         env.render()
-        states, actions, rewards = [], [], []
+        states, actions, rewards, is_done = [], [], [], []
         for t in range(args.len_episode):
             a = agent.choose_action(s)
             s_, r, done, _ = env.step(a)
-            env.render()
+            # env.render()
             ep_r += r
             states.append(s)
             actions.append(a)
             rewards.append((r + 8) / 8)       # 参考了网上的做法
+            is_done.append(done)
             s = s_
             if (t + 1) % args.batch == 0 or t == args.len_episode - 1:   # N步更新
                 states = np.array(states)
                 actions = np.array(actions)
                 rewards = np.array(rewards)
 
-                targets = agent.discount_reward(rewards, s_)          # 奖励回溯
+                targets = agent.discount_reward(rewards, s_, is_done)          # 奖励回溯
                 agent.update(states, actions, targets)                # 进行actor和critic网络的更新
                 states, actions, rewards = [], [], []
 
