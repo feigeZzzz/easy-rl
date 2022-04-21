@@ -1,9 +1,6 @@
 import paddle
 import paddle.nn as nn
-import paddle.nn.functional as F
 from paddle.nn import Conv2D, ReLU, Linear, Layer
-
-import math
 
 
 def conv_out(In):

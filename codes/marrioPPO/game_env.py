@@ -1,13 +1,15 @@
 from __future__ import print_function
-import gym_super_mario_bros
-from gym.spaces import Box
-from gym import Wrapper
-from nes_py.wrappers import JoypadSpace
-from gym_super_mario_bros.actions import SIMPLE_MOVEMENT, COMPLEX_MOVEMENT, RIGHT_ONLY
-import cv2
-import numpy as np
-import subprocess as sp
+
 import multiprocessing as mp
+import subprocess as sp
+
+import cv2
+import gym_super_mario_bros
+import numpy as np
+from gym import Wrapper
+from gym.spaces import Box
+from gym_super_mario_bros.actions import SIMPLE_MOVEMENT, COMPLEX_MOVEMENT, RIGHT_ONLY
+from nes_py.wrappers import JoypadSpace
 
 
 class Monitor:
@@ -21,8 +23,10 @@ class Monitor:
             self.pipe = sp.Popen(self.command, stdin=sp.PIPE, stderr=sp.PIPE)
         except FileNotFoundError:
             pass
+
     '''记录
     '''
+
     def record(self, image_array):
         self.pipe.stdin.write(image_array.tostring())
 

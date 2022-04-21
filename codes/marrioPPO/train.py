@@ -1,28 +1,22 @@
 import os
+import shutil
+from collections import deque
 
-# 安装环境
-os.system("pip install gym-super-mario-bros")
-os.system("pip install gym")
-os.system("clear")
-os.environ['OMP_NUM_THREADS'] = '1'
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+import numpy as np
+import paddle
+import paddle.nn.functional as F
+from gym_super_mario_bros.actions import SIMPLE_MOVEMENT, COMPLEX_MOVEMENT, RIGHT_ONLY
+from paddle.distribution import Categorical
+from tqdm import trange
+from visualdl import LogWriter
 
 from marrioPPO.game_env import MultipleEnvironments
 from marrioPPO.game_env import create_train_env
 from marrioPPO.model import MARIO
 
-import paddle
-from paddle.distribution import Categorical
-import paddle.nn.functional as F
-import multiprocessing as _mp
-import numpy as np
-import shutil
-from visualdl import LogWriter
-
-from collections import deque
-from gym_super_mario_bros.actions import SIMPLE_MOVEMENT, COMPLEX_MOVEMENT, RIGHT_ONLY
-import time
-from tqdm import trange
+# 安装环境
+os.environ['OMP_NUM_THREADS'] = '1'
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
 def eval(local_model, log_writer, eval_epch):
@@ -60,7 +54,7 @@ def eval(local_model, log_writer, eval_epch):
                         "{}/mario_{}_{}.pdparams".format(saved_path, world, stage))
 
         # aistudio 下无法显示
-        # env.render()
+        env.render()
         actions.append(action)
         if curr_step > num_global_steps or actions.count(actions[0]) == actions.maxlen:
             done = True
@@ -72,6 +66,7 @@ def eval(local_model, log_writer, eval_epch):
             total_reward = 0
             break
         state = paddle.to_tensor(state, dtype="float32")
+    env.close()
     return eval_epch
 
 
@@ -231,7 +226,7 @@ def train():
 '''不需要调整的全局变量
 '''
 gamma = 0.9  # 奖励的折算因子
-tau = 1.0  # GAE(Generalized Advantage Estimation), 即优势函数的参数
+tau = 0.95  # GAE(Generalized Advantage Estimation), 即优势函数的参数
 beta = 0.01  # 交叉熵的系数
 epsilon = 0.2  # 裁剪后的替代目标函数(PPO 提出)的参数
 batch_size = 16
@@ -248,7 +243,7 @@ saved_path = "./models"
 world = 1  # 世界
 stage = 1  # 关卡
 action_type = "simple"  # 操作模式
-num_processes = 1  # 线程数
+num_processes = 2  # 线程数
 lr = float(1e-4)  # 学习率
 
 if __name__ == "__main__":
